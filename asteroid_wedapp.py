@@ -1,0 +1,34 @@
+import streamlit as st
+import requests
+from bs4 import BeautifulSoup
+
+st.title("🔭 오늘의 소행성 찾기")
+st.write("오늘의 걸음수를 입력하세요 👣")
+
+num = st.number_input("걸음 수", min_value=1, step=1)
+
+if st.button("검색"):
+    search_url = f"https://www.spacereference.org/search?q={num}"
+    response = requests.get(search_url)
+
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        result_link = soup.find("a", href=True)
+
+        if result_link:
+            full_url = "https://www.spacereference.org" + result_link["href"]
+            asteroid_page = requests.get(full_url)
+            if asteroid_page.status_code == 200:
+                page_soup = BeautifulSoup(asteroid_page.text, "html.parser")
+                title_tag = page_soup.find("h1")
+                if title_tag:
+                    asteroid_name = title_tag.text.strip()
+                    st.success(f"✨ {num}번 소행성의 이름은 **{asteroid_name}** 입니다!")
+                else:
+                    st.error("소행성 이름을 찾을 수 없습니다.")
+            else:
+                st.error("소행성 정보를 불러올 수 없습니다.")
+        else:
+            st.warning("해당 번호의 소행성을 찾을 수 없습니다.")
+    else:
+        st.error("검색 페이지를 불러올 수 없습니다.")
